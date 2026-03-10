@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -23,6 +24,9 @@ var (
 		"Воскресенье",
 		"Не могу",
 	}
+
+	// ID разрешённого чата (будет установлен из env)
+	allowedChatID int64
 )
 
 func main() {
@@ -37,6 +41,24 @@ func main() {
 		log.Fatal("Ошибка: TELEGRAM_BOT_TOKEN не установлен")
 	}
 
+	// Получаем ID разрешённого чата
+	allowedChatIDStr := os.Getenv("ALLOWED_CHAT_ID")
+	if allowedChatIDStr == "" {
+		log.Fatal("Ошибка: ALLOWED_CHAT_ID не установлен")
+	}
+	
+	var err error
+	allowedChatID, err = strconv.ParseInt(allowedChatIDStr, 10, 64)
+	if err != nil {
+		log.Fatalf("Ошибка: ALLOWED_CHAT_ID должен быть числом: %v", err)
+	}
+
+	// Получаем строку подключения к базе данных
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("Ошибка: DATABASE_URL не установлен")
+	}
+
 	// Создаём бота
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -44,13 +66,16 @@ func main() {
 	}
 
 	log.Printf("Авторизован как @%s", bot.Self.UserName)
+	log.Printf("Бот работает только с чатом ID: %d", allowedChatID)
 
-	// Подключаемся к базе данных
-	db, err := NewDatabase("polls.db")
+	// Подключаемся к базе данных PostgreSQL
+	db, err := NewDatabase(databaseURL)
 	if err != nil {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 	defer db.Close()
+
+	log.Println("Успешное подключение к PostgreSQL")
 
 	// Настраиваем получение обновлений
 	u := tgbotapi.NewUpdate(0)
@@ -75,6 +100,13 @@ func main() {
 	// Обрабатываем обновления
 	for update := range updates {
 		if update.Message == nil {
+			continue
+		}
+
+		// Проверяем, что сообщение из разрешённого чата
+		if update.Message.Chat.ID != allowedChatID {
+			log.Printf("Игнорируем сообщение из неразрешённого чата: %d (разрешён: %d)",
+				update.Message.Chat.ID, allowedChatID)
 			continue
 		}
 

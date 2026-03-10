@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 )
 
 // Poll представляет опрос в базе данных
@@ -24,11 +24,16 @@ type Database struct {
 	db *sql.DB
 }
 
-// NewDatabase создаёт новое подключение к базе данных
-func NewDatabase(dbPath string) (*Database, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+// NewDatabase создаёт новое подключение к базе данных PostgreSQL
+func NewDatabase(connStr string) (*Database, error) {
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка открытия базы данных: %w", err)
+	}
+
+	// Проверяем подключение
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("ошибка подключения к базе данных: %w", err)
 	}
 
 	database := &Database{db: db}
@@ -43,13 +48,13 @@ func NewDatabase(dbPath string) (*Database, error) {
 func (d *Database) init() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS polls (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		chat_id INTEGER NOT NULL,
+		id SERIAL PRIMARY KEY,
+		chat_id BIGINT NOT NULL,
 		message_id INTEGER NOT NULL,
 		poll_id TEXT NOT NULL UNIQUE,
 		week_number INTEGER NOT NULL,
 		year INTEGER NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		UNIQUE(chat_id, week_number, year)
 	)
 	`
@@ -74,7 +79,7 @@ func (d *Database) HasWeekPoll(chatID int64) (bool, error) {
 	year := now.Year()
 
 	var count int
-	query := `SELECT COUNT(*) FROM polls WHERE chat_id = ? AND week_number = ? AND year = ?`
+	query := `SELECT COUNT(*) FROM polls WHERE chat_id = $1 AND week_number = $2 AND year = $3`
 	err := d.db.QueryRow(query, chatID, weekNumber, year).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("ошибка проверки опроса: %w", err)
@@ -91,7 +96,7 @@ func (d *Database) SavePoll(chatID int64, messageID int, pollID string) error {
 
 	query := `
 	INSERT INTO polls (chat_id, message_id, poll_id, week_number, year)
-	VALUES (?, ?, ?, ?, ?)
+	VALUES ($1, $2, $3, $4, $5)
 	`
 
 	_, err := d.db.Exec(query, chatID, messageID, pollID, weekNumber, year)
@@ -111,7 +116,7 @@ func (d *Database) GetCurrentWeekPoll(chatID int64) (*Poll, error) {
 	query := `
 	SELECT id, chat_id, message_id, poll_id, week_number, year, created_at
 	FROM polls
-	WHERE chat_id = ? AND week_number = ? AND year = ?
+	WHERE chat_id = $1 AND week_number = $2 AND year = $3
 	`
 
 	poll := &Poll{}
