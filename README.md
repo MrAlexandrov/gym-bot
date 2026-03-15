@@ -258,6 +258,7 @@ Password: (из .env)
 - [`github.com/go-telegram-bot-api/telegram-bot-api/v5`](https://github.com/go-telegram-bot-api/telegram-bot-api) - Telegram Bot API для Go
 - [`github.com/lib/pq`](https://github.com/lib/pq) - PostgreSQL драйвер для Go
 - [`github.com/joho/godotenv`](https://github.com/joho/godotenv) - Загрузка переменных окружения из .env файла
+- [`golang.org/x/sync/errgroup`](https://pkg.go.dev/golang.org/x/sync/errgroup) - Параллельный запуск горутин с обработкой ошибок
 
 ## 🛠️ Разработка
 
@@ -265,8 +266,10 @@ Password: (из .env)
 
 ```
 gym-bot/
-├── main.go              # Основная логика бота
-├── database.go          # Работа с PostgreSQL
+├── main.go              # Точка входа: инициализация (errgroup), polling, graceful shutdown
+├── database.go          # Интерфейс DB, тип Database, подключение к PostgreSQL, CRUD
+├── handlers.go          # Маршрутизация команд, обработчики, бизнес-логика
+├── constants.go         # Текстовые константы, список дней недели
 ├── go.mod               # Go модули
 ├── go.sum               # Контрольные суммы модулей
 ├── Dockerfile           # Docker образ для бота
