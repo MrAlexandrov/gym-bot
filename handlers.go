@@ -16,6 +16,19 @@ var commands = map[string]CommandHandler{
 	"findpoll": handleFindCurrentPoll,
 }
 
+func CreateBot(token string) (bot *tgbotapi.BotAPI, err error) {
+	if token == "" {
+		return nil, fmt.Errorf("TELEGRAM_BOT_TOKEN is empty")
+	}
+
+	bot, err = tgbotapi.NewBotAPI(token)
+	if err != nil {
+		return nil, err
+	}
+
+	return bot, err
+}
+
 // handleCommand обрабатывает команды бота
 func handleCommand(bot *tgbotapi.BotAPI, db DB, msg *tgbotapi.Message) {
 	handler, ok := commands[msg.Command()]

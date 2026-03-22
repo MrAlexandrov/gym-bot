@@ -31,8 +31,21 @@ type Database struct {
 	db *sql.DB
 }
 
-// NewDatabase создаёт новое подключение к базе данных PostgreSQL
-func NewDatabase(connStr string) (*Database, error) {
+func CreateDatabase(databaseURL string) (db *Database, err error) {
+	if databaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL is empty")
+	}
+
+	db, err = newDatabase(databaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, err
+}
+
+// newDatabase создаёт новое подключение к базе данных PostgreSQL
+func newDatabase(connStr string) (*Database, error) {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка открытия базы данных: %w", err)
@@ -73,31 +86,6 @@ func (d *Database) init() error {
 	return nil
 }
 
-func getWeekNumber(date time.Time) int {
-	_, week := date.ISOWeek()
-	return week
-}
-
-func GetCurrentWeekNumber() int {
-	return getWeekNumber(time.Now())
-}
-
-func GetYear(date time.Time) int {
-	return date.Year()
-}
-
-func GetCurrentYear() int {
-	return GetYear(time.Now())
-}
-
-func getWeekAndYear(date time.Time) (int, int) {
-	return getWeekNumber(date), GetYear(date)
-}
-
-func getCurrentWeekAndYear() (int, int) {
-	return getWeekAndYear(time.Now())
-}
-
 func (d *Database) HasWeekPoll(chatID int64, weekNumber int, year int) (bool, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM polls WHERE chat_id = $1 AND week_number = $2 AND year = $3`
@@ -107,13 +95,6 @@ func (d *Database) HasWeekPoll(chatID int64, weekNumber int, year int) (bool, er
 	}
 
 	return count > 0, nil
-}
-
-// HasWeekPoll проверяет, существует ли опрос для текущей недели
-func (d *Database) HasCurrentWeekPoll(chatID int64) (bool, error) {
-	weekNumber, year := getCurrentWeekAndYear()
-
-	return d.HasWeekPoll(chatID, weekNumber, year)
 }
 
 func (d *Database) SavePoll(chatID int64, messageID int, pollID string, weekNumber int, year int) error {
@@ -128,13 +109,6 @@ func (d *Database) SavePoll(chatID int64, messageID int, pollID string, weekNumb
 	}
 
 	return nil
-}
-
-// SaveCurrentPoll сохраняет опрос в базу данных
-func (d *Database) SaveCurrentPoll(chatID int64, messageID int, pollID string) error {
-	weekNumber, year := getCurrentWeekAndYear()
-
-	return d.SavePoll(chatID, messageID, pollID, weekNumber, year)
 }
 
 func (d *Database) GetWeekPoll(chatID int64, weekNumber int, year int) (*Poll, error) {
@@ -163,13 +137,6 @@ func (d *Database) GetWeekPoll(chatID int64, weekNumber int, year int) (*Poll, e
 	}
 
 	return poll, nil
-}
-
-// GetCurrentWeekPoll возвращает опрос текущей недели
-func (d *Database) GetCurrentWeekPoll(chatID int64) (*Poll, error) {
-	weekNumber, year := getCurrentWeekAndYear()
-
-	return d.GetWeekPoll(chatID, weekNumber, year)
 }
 
 // Close закрывает подключение к базе данных

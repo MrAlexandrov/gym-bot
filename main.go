@@ -16,37 +16,9 @@ import (
 
 var (
 	bot           *tgbotapi.BotAPI
-	db            *Database
+	db            DB
 	allowedChatID int64
 )
-
-func createBot() (bot *tgbotapi.BotAPI, err error) {
-	token := os.Getenv("TELEGRAM_BOT_TOKEN")
-	if token == "" {
-		return nil, fmt.Errorf("TELEGRAM_BOT_TOKEN не установлен")
-	}
-
-	bot, err = tgbotapi.NewBotAPI(token)
-	if err != nil {
-		return nil, err
-	}
-
-	return bot, err
-}
-
-func createDatabase() (db *Database, err error) {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		return nil, fmt.Errorf("DATABASE_URL не установлен")
-	}
-
-	db, err = NewDatabase(databaseURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, err
-}
 
 func getAllowedChatID() (allowedChatID int64, err error) {
 	allowedChatIDStr := os.Getenv("ALLOWED_CHAT_ID")
@@ -72,7 +44,7 @@ func prepare() (err error) {
 	g := new(errgroup.Group)
 
 	g.Go(func() (err error) {
-		bot, err = createBot()
+		bot, err = CreateBot(os.Getenv("TELEGRAM_BOT_TOKEN"))
 		if err != nil {
 			return err
 		}
@@ -81,7 +53,7 @@ func prepare() (err error) {
 	})
 
 	g.Go(func() (err error) {
-		db, err = createDatabase()
+		db, err = CreateDatabase(os.Getenv("DATABASE_URL"))
 		if err != nil {
 			return err
 		}
