@@ -45,17 +45,6 @@ func checkWeekPoll(db DB, chatID int64, weekNumber int, year int) (bool, error) 
 	return hasWeekPoll, nil
 }
 
-// checkCurrentWeekPoll — чистая логика, без Telegram
-func checkCurrentWeekPoll(db DB, chatID int64) (bool, error) {
-	weekNumber, year := getCurrentWeekAndYear()
-
-	hasWeekPoll, err := checkWeekPoll(db, chatID, weekNumber, year)
-	if err != nil {
-		return false, fmt.Errorf("ошибка проверки опроса: %w", err)
-	}
-	return hasWeekPoll, nil
-}
-
 func createPoll(chatID int64) tgbotapi.SendPollConfig {
 	return tgbotapi.SendPollConfig{
 		BaseChat:              tgbotapi.BaseChat{ChatID: chatID},

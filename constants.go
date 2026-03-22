@@ -47,8 +47,6 @@ const (
 
 	errorCheckPoolText = "❌ Произошла ошибка при проверке опроса."
 
-	errorAlreadyExistsText = "⚠️ На текущую неделю уже создан опрос! Используйте /findpoll, чтобы найти его."
-
 	errorCreatePollText = "❌ Произошла ошибка при создании опроса."
 )
 
