@@ -45,7 +45,7 @@ const (
 
 	errorSendAnswerText = "❌ Произошла ошибка при отправке ответа"
 
-	errorCheckPoolText = "❌ Произошла ошибка при проверке опроса."
+	errorCheckPollText = "❌ Произошла ошибка при проверке опроса."
 
 	errorCreatePollText = "❌ Произошла ошибка при создании опроса."
 )

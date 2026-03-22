@@ -66,7 +66,7 @@ func (a *App) newPollImpl(chatID int64, weekNumber, year int) {
 	hasWeekPoll, err := checkWeekPoll(a.db, chatID, weekNumber, year)
 	if err != nil {
 		log.Printf("Ошибка проверки опроса: %v", err)
-		a.bot.Send(tgbotapi.NewMessage(chatID, errorCheckPoolText))
+		a.bot.Send(tgbotapi.NewMessage(chatID, errorCheckPollText))
 		return
 	}
 	if hasWeekPoll {
